@@ -1,6 +1,6 @@
 Hey! :)
 
-I'm actually working on a new GUI for blitz3D / Blitzmax / Blitzplus, the kernel of this GUI is 
+I'm actually working on a new GUI for Blitz3D / Blitzmax / Blitzplus, the kernel of this GUI is 
 good and fast, but not perfect... So i'm actually reworking on a new simple kernel of GUI with
 Event system. It's a very simple but robust base that you can improve. You can actually highlight
 the button, get the event pressed, and clicked. The window Z order work well.
