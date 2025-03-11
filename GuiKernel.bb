@@ -1,404 +1,437 @@
 ; ----------------------------------------
-; Name : Gui skeleton Kernel With Events
+; Name : Gui Skeleton Kernel
 ; Date : (C)2025
 ; Site : https://github.com/BlackCreepyCat
 ; ----------------------------------------
 
-; Graphics initialization: 800x600 resolution, 16-bit color depth, windowed mode
+; Initialize graphics mode: resolution 800x600, 16-bit color, windowed mode
 Graphics 800,600,16,2
 SetBuffer BackBuffer() ; Use back buffer for smooth rendering (double buffering)
 
-; Definition of the Event type for handling user events
+; Definition of the Event type to handle user interactions
 Type Event
     Field eventType         ; Event type: 0 = hover, 1 = click, 2 = release
-    Field widget.GuiWidget  ; Reference to the widget affected by the event
+    Field widget.GuiWidget  ; Reference to the related widget
     Field timestamp         ; Timestamp of the event (in milliseconds)
 End Type
 
 ; Definition of the GuiWidget type for interface elements (windows and buttons)
 Type GuiWidget
-    Field x#, y#            ; Coordinates relative to parent (floating-point)
-    Field w#, h#            ; Width and height (floating-point)
+    Field x#, y#            ; Coordinates relative to the parent (float)
+    Field w#, h#            ; Width and height (float)
+    
     Field label$            ; Text displayed on the widget
+    
     Field widgetType        ; Type: 0 = window, 1 = button
+    
     Field parent.GuiWidget  ; Reference to the parent widget
-    Field children.GuiWidget[100] ; Array of child widgets (fixed limit of 100)
+    Field children.GuiWidget[100] ; Array of children (fixed limit of 100)
     Field childCount        ; Current number of children
     Field depth             ; Depth (z-order) for rendering order
-    Field active            ; Active state (not currently used)
+    
+    Field active            ; Active state (not used yet)
     Field clicked           ; Indicates if the button is clicked
 End Type
 
 ; Global variables used throughout the program
-Global mouseHit1, mouseX, mouseY        ; Left mouse click state and mouse position
-Global draggingWidget.GuiWidget = Null  ; Widget currently being dragged (window)
-Global dragOffsetX#, dragOffsetY#       ; Offset for dragging
-Global resizingWidget.GuiWidget = Null  ; Widget currently being resized
-Global resizeOffsetX#, resizeOffsetY#   ; Offset for resizing
-Global highestDepth = 0                 ; Current maximum depth (z-order)
-Global message$ = ""                    ; Temporary message to display
-Global messageTimer = 0                 ; Timer for message display duration
-Global resizeGadgetSize = 10            ; Size of the resize gadget (bottom-right corner)
-Global lastHoveredWidget.GuiWidget = Null ; Last hovered widget to avoid repetition
+Global mouseHit1, mouseX, mouseY         ; Mouse left click state and position
+Global draggingWidget.GuiWidget = Null   ; Widget being dragged (window)
+Global dragOffsetX#, dragOffsetY#        ; Offset for dragging
+Global resizingWidget.GuiWidget = Null   ; Widget being resized
+Global resizeOffsetX#, resizeOffsetY#    ; Offset for resizing
+Global highestDepth = 0                  ; Current maximum depth (z-order)
+Global message$ = ""                      ; Temporary message to display
+Global messageTimer = 0                   ; Timer for message display duration
+Global resizeGadgetSize = 10              ; Size of the resize gadget (bottom-right corner)
+Global lastHoveredWidget.GuiWidget = Null ; Last hovered widget to avoid repetitions
 
-; Creation of test widgets to verify functionality
-win1 = CreateWindow(100,100,300,200,"Window 1")    ; Window at (100,100), size 300x200
-btn1 = CreateButton(win1, 10, 30, 80, 20, "Button 1") ; Button inside Window 1
-btn2 = CreateButton(btn1, 5, 25, 100, 20, "Sub-btn")  ; Button child of Button 1
-btn3 = CreateButton(btn2, 5, 25, 100, 20, "SubSub-btn") ; Button child of Sub-btn
-win2 = CreateWindow(150,150,300,200,"Window 2")    ; Second window
-CreateButton(win2, 10, 30, 80, 20, "Test")         ; Button inside Window 2
+; Creating test widgets to check functionality
+win1.GuiWidget = CreateWindow(100,100,300,200,"Window 1")    ; Window at (100,100), size 300x200
+btn1.GuiWidget = CreateButton(win1, 10, 30, 80, 20, "Button 1") ; Button inside Window 1
+btn2.GuiWidget = CreateButton(btn1, 5, 25, 100, 20, "Sub-btn") ; Child button of Button 1
+btn3.GuiWidget = CreateButton(btn2, 5, 25, 100, 20, "SubSub-btn") ; Child button of Sub-btn
+win2.GuiWidget = CreateWindow(150,150,300,200,"Window 2")    ; Second window
+CreateButton(win2, 10, 30, 80, 20, "Test")                  ; Button inside Window 2
 
 ; Main program loop
-While Not KeyHit(1) ; Runs until the Escape key is pressed
-    mouseHit1 = MouseHit(1) ; Detects a left mouse click
+While Not KeyHit(1) ; Until the Escape key is pressed
+    mouseHit1 = MouseHit(1) ; Detects a left click
     MouseX = MouseX()       ; Updates mouse X position
     MouseY = MouseY()       ; Updates mouse Y position
-	
-    UpdateWidgets()         ; Updates widget states (hover, click, drag, etc.)
+    
+    UpdateWidgets()         ; Updates widget state (hover, click, drag, etc.)
     DrawWidgets()           ; Draws all widgets on the screen
     DrawMessage()           ; Displays a temporary message if needed
-	
+    
     ProcessEvents()         ; Processes generated events (hover, click, release)
+    
+    If win1 <> Null
+        Color 0,255,0
+        Text 10,40 , "Window 1 X position: " + Str(win1\x)
+    EndIf
 	
-    Flip                    ; Swaps buffers to display the rendered frame
+    Flip ; Swap buffers to display the rendering
 Wend
 End
 
-; --- Event handling functions ---
+; --- Event Handling Functions ---
 
 ; Creates a new event
 Function CreateEvent(eventType, widget.GuiWidget)
-    ; Creates a new event instance
     ev.Event = New Event
-    ev\eventType = eventType    ; Sets the type (0, 1, or 2)
-    ev\widget = widget          ; Links to the affected widget
+    ev\eventType = eventType    ; Sets the event type (0, 1, or 2)
+    ev\widget = widget          ; Links the event to a widget
     ev\timestamp = MilliSecs()  ; Records the current time
-    Return Handle(ev)           ; Returns a handle for the event
+    Return Handle(ev)           ; Returns an event handle
 End Function
 
-; Processes queued events
+; Processes the event queue
 Function ProcessEvents()
     For ev.Event = Each Event   ; Loops through all events
-		If ev\widget <> Null Then
-			Select ev\eventType     ; Based on event type
-				Case 0 ; Hover
-					message$ = "Hover: " + ev\widget\label    ; Hover message
-					messageTimer = MilliSecs() + 1000         ; Displays for 1 second
-				Case 1 ; Click
-					message$ = "Click on: " + ev\widget\label ; Click message
-					messageTimer = MilliSecs() + 2000         ; Displays for 2 seconds
-				Case 2 ; Release
-					Select ev\widget\label  ; Specific actions based on released button
-						Case "Button 1"
-							message$ = "Button 1 released!"
-							messageTimer = MilliSecs() + 2000
-						Case "Sub-btn"
-							message$ = "Sub-button released!"
-							messageTimer = MilliSecs() + 2000
-						Default
-							message$ = "Released: " + ev\widget\label
-							messageTimer = MilliSecs() + 2000
-					End Select
-			End Select
-		EndIf
-		
+        If ev\widget <> Null Then
+            Select ev\eventType     ; Check event type
+                Case 0 ; Hover
+                    message$ = "Hover: " + ev\widget\label    ; Hover message
+                    messageTimer = MilliSecs() + 1000         ; Display for 1 second
+                Case 1 ; Click
+                    message$ = "Click on: " + ev\widget\label ; Click message
+                    messageTimer = MilliSecs() + 2000         ; Display for 2 seconds
+                Case 2 ; Release
+                    If ev\widget\widgetType = 1 Then
+                        ev\widget\clicked = False ; Reset button state
+                    EndIf
+                    Select ev\widget\label  ; Specific actions based on the button
+                        Case "Button 1"
+                            message$ = "Button 1 released!"
+                            messageTimer = MilliSecs() + 2000
+                            win3.GuiWidget = CreateWindow(Rnd(150,350),Rnd(150,350),300,200,"Window X") 
+                        Case "Sub-btn"
+                            message$ = "Sub-button released!"
+                            messageTimer = MilliSecs() + 2000
+                        Default
+                            message$ = "Released: " + ev\widget\label
+                            messageTimer = MilliSecs() + 2000
+                    End Select
+            End Select
+        EndIf
         Delete ev   ; Deletes the event after processing
-		
     Next
 End Function
 
-; --- GUI functions ---
+; --- Widget Management Functions ---
 
 ; Creates a new window with a close button
-Function CreateWindow(x#, y#, w#, h#, label$)
-    win.GuiWidget = New GuiWidget   ; Creates a new widget instance
-    win\x = x                       ; X position
-    win\y = y                       ; Y position
-    win\w = w                       ; Width
-    win\h = h                       ; Height
-    win\label = label               ; Window title text
-    win\widgetType = 0              ; Type 0 = window
-    win\depth = highestDepth        ; Sets current depth
-    highestDepth = highestDepth + 1 ; Increments maximum depth
-    win\active = True               ; Marks window as active
-	
-    ; Adds a "X" button to close the window
-    btn = CreateButton(Handle(win), w - 20, 2, 16, 16, "X")
-	
-    Return Handle(win)              ; Returns a handle for the window
+Function CreateWindow.GuiWidget(x#, y#, w#, h#, label$)
+    win.GuiWidget = New GuiWidget
+    win\x = x
+    win\y = y
+    win\w = w
+    win\h = h
+    win\label = label
+    win\widgetType = 0
+    win\depth = highestDepth
+    highestDepth = highestDepth + 1
+    win\active = True
+    
+    ; Add a "X" button to close the window
+    btn.GuiWidget = CreateButton(win, w - 20, 2, 16, 16, "X")
+    
+    Return win
 End Function
 
 ; Creates a button attached to a parent
-Function CreateButton(parentHandle, x#, y#, w#, h#, label$)
-    parent.GuiWidget = Object.GuiWidget(parentHandle) ; Retrieves parent via handle
-    If parent = Null Then Return -1                   ; Returns -1 if parent doesn't exist
-	
-    btn.GuiWidget = New GuiWidget   ; Creates a new widget instance
-    btn\x = x                       ; X position relative to parent
-    btn\y = y                       ; Y position relative to parent
-    btn\w = w                       ; Width
-    btn\h = h                       ; Height
-    btn\label = label               ; Button text
-    btn\widgetType = 1              ; Type 1 = button
-    btn\parent = parent             ; Links to parent
-    btn\depth = parent\depth        ; Inherits parent's depth
-    btn\clicked = False             ; Initially not clicked
-	
-    ; Adds the button to the parent's children array
+Function CreateButton.GuiWidget(parentHandle.GuiWidget, x#, y#, w#, h#, label$)
+    parent.GuiWidget = parentHandle
+    If parent = Null Then Return Null
+    
+    btn.GuiWidget = New GuiWidget
+    btn\x = x
+    btn\y = y
+    btn\w = w
+    btn\h = h
+    btn\label = label
+    btn\widgetType = 1
+    btn\parent = parent
+    btn\depth = parent\depth
+    btn\clicked = False
+    
     If parent\childCount < 100 Then
         parent\children[parent\childCount] = btn
         parent\childCount = parent\childCount + 1
     End If
-	
-    Return Handle(btn)              ; Returns a handle for the button
+    
+    Return btn
 End Function
 
-; Calculates absolute X position by traversing the parent hierarchy
+; Get absolute X position
 Function GetAbsoluteX#(widget.GuiWidget)
-    If widget = Null Then Return 0              ; Returns 0 if widget doesn't exist
-    If widget\parent = Null Then Return widget\x ; Returns X if no parent
-    Return GetAbsoluteX(widget\parent) + widget\x ; Adds parent's position
+    If widget = Null Then Return 0
+    If widget\parent = Null Then Return widget\x
+    Return GetAbsoluteX(widget\parent) + widget\x
 End Function
 
-; Calculates absolute Y position by traversing the parent hierarchy
+; Get absolute Y position
 Function GetAbsoluteY#(widget.GuiWidget)
-    If widget = Null Then Return 0              ; Returns 0 if widget doesn't exist
-    If widget\parent = Null Then Return widget\y ; Returns Y if no parent
-    Return GetAbsoluteY(widget\parent) + widget\y ; Adds parent's position
+    If widget = Null Then Return 0
+    If widget\parent = Null Then Return widget\y
+    Return GetAbsoluteY(widget\parent) + widget\y
 End Function
 
-; Updates widget states (hover, click, drag, resize)
+; More functions for updating, rendering, and handling interactions should be added here...
+; Met à jour l'état des widgets (survol, clic, déplacement, redimensionnement)
 Function UpdateWidgets()
-    Local topWindow.GuiWidget = Null    ; Window under the cursor
-    Local topDepth = -1                 ; Highest depth under the cursor
-    Local hoveredWidget.GuiWidget = Null ; Currently hovered widget
-	
-    ; Step 1: Determine which window is under the cursor for interactions
+    Local topWindow.GuiWidget = Null    ; Fenêtre sous le curseur
+    Local topDepth = -1                 ; Profondeur maximale sous le curseur
+    Local hoveredWidget.GuiWidget = Null ; Widget actuellement survolé
+    
+    ; Étape 1 : Détermine quelle fenêtre est sous le curseur pour les interactions
     For widget.GuiWidget = Each GuiWidget
-        If widget\widgetType = 0 Then   ; Checks only windows
+        If widget\widgetType = 0 Then   ; Vérifie uniquement les fenêtres
             absX# = GetAbsoluteX(widget)
             absY# = GetAbsoluteY(widget)
+			
             If MouseX > absX And MouseX < absX + widget\w And MouseY > absY And MouseY < absY + widget\h Then
-                If widget\depth > topDepth Then ; Keeps the window with the highest depth
+                If widget\depth > topDepth Then ; Garde la fenêtre avec la profondeur la plus élevée
                     topWindow = widget
                     topDepth = widget\depth
                 End If
             End If
+			
         End If
     Next
-	
-    ; Step 2: Detect button hover (only for the active window)
+    
+    ; Étape 2 : Détection du survol des boutons (uniquement pour la fenêtre active)
     For widget.GuiWidget = Each GuiWidget
-        If widget\widgetType = 1 Then   ; Checks only buttons
+        If widget\widgetType = 1 Then   ; Vérifie uniquement les boutons
             absX# = GetAbsoluteX(widget)
             absY# = GetAbsoluteY(widget)
+			
             If MouseX > absX And MouseX < absX + widget\w And MouseY > absY And MouseY < absY + widget\h Then
-                ; Checks if the button belongs to the active window (highest depth)
+                ; Vérifie si le bouton appartient à la fenêtre active (profondeur maximale)
                 If widget\depth = highestDepth - 1 And widget\clicked = False Then
                     hoveredWidget = widget
-                    If hoveredWidget <> lastHoveredWidget Then  ; New hover detected
-                        CreateEvent(0, hoveredWidget)           ; Creates a hover event
-                        lastHoveredWidget = hoveredWidget       ; Updates last hovered
+                    If hoveredWidget <> lastHoveredWidget Then  ; Nouveau survol détecté
+                        CreateEvent(0, hoveredWidget)           ; Crée un événement de survol
+                        lastHoveredWidget = hoveredWidget       ; Met à jour le dernier survolé
                     End If
-                    Exit ; Exits after finding the topmost button
+                    Exit ; Sort après avoir trouvé le bouton le plus en avant
                 End If
             End If
+			
         End If
     Next
-    If hoveredWidget = Null Then lastHoveredWidget = Null ; Resets if nothing is hovered
 	
-    ; Step 3: Handle clicks (Mouse Down)
+    If hoveredWidget = Null Then lastHoveredWidget = Null ; Réinitialise si rien n'est survolé
+    
+    ; Étape 3 : Gestion des clics (Mouse Down)
     If mouseHit1 Then
-        ; Sub-step 3.1: Dragging or resizing the window under the cursor
+        ; Sous-étape 3.1 : Déplacement ou redimensionnement de la fenêtre sous le curseur
         If topWindow <> Null Then
             absX# = GetAbsoluteX(topWindow)
             absY# = GetAbsoluteY(topWindow)
-			
-            ; Checks if the click is on the resize gadget (bottom-right corner)
+            
+            ; Vérifie si le clic est sur le gadget de redimensionnement (coin bas-droit)
             If MouseX > absX + topWindow\w - resizeGadgetSize And MouseY > absY + topWindow\h - resizeGadgetSize Then
-                resizingWidget = topWindow      ; Activates resizing
-                resizeOffsetX = absX + topWindow\w - MouseX ; Calculates X offset
-                resizeOffsetY = absY + topWindow\h - MouseY ; Calculates Y offset
-            ; Checks if the click is in the title bar for dragging
+                resizingWidget = topWindow      ; Active le redimensionnement
+                resizeOffsetX = absX + topWindow\w - MouseX ; Calcule le décalage X
+                resizeOffsetY = absY + topWindow\h - MouseY ; Calcule le décalage Y
+            ; Vérifie si le clic est dans la barre de titre pour le déplacement
             ElseIf MouseY < absY + 20 Then
-                Local closeButtonX# = absX + topWindow\w - 20   ; X position of "X" button
-                Local closeButtonY# = absY + 2                  ; Y position of "X" button
-                Local safetyZone# = 16 + 4                      ; Safety zone around "X"
-				
-                ; Activates dragging if click is not near the "X" button
+                Local closeButtonX# = absX + topWindow\w - 20   ; Position X du bouton "X"
+                Local closeButtonY# = absY + 2                  ; Position Y du bouton "X"
+                Local safetyZone# = 16 + 4                      ; Zone de sécurité autour de "X"
+                
+                ; Active le déplacement si le clic n'est pas près du bouton "X"
                 If MouseX < closeButtonX Or MouseX > closeButtonX + safetyZone Or MouseY < closeButtonY Or MouseY > closeButtonY + safetyZone Then
-                    draggingWidget = topWindow      ; Activates dragging
-                    dragOffsetX = MouseX - absX     ; Calculates X offset
-                    dragOffsetY = MouseY - absY     ; Calculates Y offset
+                    draggingWidget = topWindow      ; Active le déplacement
+                    dragOffsetX = MouseX - absX     ; Calcule le décalage X
+                    dragOffsetY = MouseY - absY     ; Calcule le décalage Y
                 End If
             End If
-			
-            ; Brings the clicked window to the foreground
+            
+            ; Met la fenêtre cliquée au premier plan
             oldDepth = topWindow\depth
+			
             For widget.GuiWidget = Each GuiWidget
-                If widget\depth > oldDepth Then widget\depth = widget\depth - 1 ; Shifts others down
+                If widget\depth > oldDepth Then widget\depth = widget\depth - 1 ; Décale les autres
             Next
-            topWindow\depth = highestDepth - 1  ; Places window at the top
-            UpdateChildrenDepth(topWindow)      ; Updates children's depth
+			
+            topWindow\depth = highestDepth - 1  ; Place la fenêtre au sommet
+            UpdateChildrenDepth(topWindow)      ; Met à jour la profondeur des enfants
         End If
-		
-        ; Sub-step 3.2: Detect clicks on buttons
-        Local clickedWidget.GuiWidget = Null    ; Clicked button
-        Local clickedDepth = -1                 ; Depth of clicked button
-		
+        
+        ; Sous-étape 3.2 : Détection des clics sur les boutons
+        Local clickedWidget.GuiWidget = Null    ; Bouton cliqué
+        Local clickedDepth = -1                 ; Profondeur du bouton cliqué
+        
         For widget.GuiWidget = Each GuiWidget
             absX# = GetAbsoluteX(widget)
             absY# = GetAbsoluteY(widget)
             If MouseX > absX And MouseX < absX + widget\w And MouseY > absY And MouseY < absY + widget\h Then
                 If widget\widgetType = 1 And widget\depth > clickedDepth Then
                     If topWindow = Null Or widget\depth = topWindow\depth Then
-                        clickedWidget = widget      ; Records the clicked button
-                        clickedDepth = widget\depth ; Updates highest depth
+                        clickedWidget = widget      ; Enregistre le bouton cliqué
+                        clickedDepth = widget\depth ; Met à jour la profondeur maximale
                     End If
                 End If
             End If
         Next
-		
+        
         If clickedWidget <> Null Then
-            clickedWidget\clicked = True        ; Marks button as clicked
-            CreateEvent(1, clickedWidget)       ; Creates a click event
+            clickedWidget\clicked = True        ; Marque le bouton comme cliqué
+            CreateEvent(1, clickedWidget)       ; Crée un événement de clic
         End If
     End If
-	
-    ; Step 4: Handle button release (Mouse Up)
+    
+    ; Étape 4 : Gestion du relâchement des boutons (Mouse Up)
     For widget.GuiWidget = Each GuiWidget
         If widget\clicked Then
-            If MouseDown(1) = 0 Then    ; Checks if the click is released
+			
+            If MouseDown(1) = 0 Then    ; Vérifie si le clic est relâché
+				
                 absX# = GetAbsoluteX(widget)
                 absY# = GetAbsoluteY(widget)
+				
                 If MouseX > absX And MouseX < absX + widget\w And MouseY > absY And MouseY < absY + widget\h Then
-                    If widget\label = "X" Then  ; If it's the "X" button
-                        DeleteWidget(widget\parent) ; Closes the parent window
-                    End If
-                    CreateEvent(2, widget)      ; Creates a release event
 					
+                    If widget\label = "X" Then  ; Si c'est le bouton "X"
+                        DeleteWidget(widget\parent) ; Ferme la fenêtre parente
+                    End If
+					
+                    CreateEvent(2, widget)      ; Crée un événement de relâchement
 					Return True
 					
-                  ;  widget\clicked = False      ; Resets clicked state
-					
-					
                 Else
-                    widget\clicked = False      ; Cancels if released outside button
+					
+                    widget\clicked = False      ; Annule si relâché hors du bouton
+					
                 End If
             End If
+			
         End If
     Next
-	
-    ; Step 5: Continuous dragging management
+    
+    ; Étape 5 : Gestion continue du déplacement
     If draggingWidget <> Null Then
-        If MouseDown(1) Then    ; While click is held
-            draggingWidget\x = MouseX - dragOffsetX ; Updates X position
-            draggingWidget\y = MouseY - dragOffsetY ; Updates Y position
+        If MouseDown(1) Then    ; Tant que le clic est maintenu
+            draggingWidget\x = MouseX - dragOffsetX ; Met à jour la position X
+            draggingWidget\y = MouseY - dragOffsetY ; Met à jour la position Y
         Else
-            draggingWidget = Null   ; Stops dragging if released
+            draggingWidget = Null   ; Arrête le déplacement si relâché
         End If
     End If
-	
-    ; Step 6: Continuous resizing management
+    
+    ; Étape 6 : Gestion continue du redimensionnement
     If resizingWidget <> Null Then
-        If MouseDown(1) Then    ; While click is held
+        If MouseDown(1) Then    ; Tant que le clic est maintenu
             absX# = GetAbsoluteX(resizingWidget)
             absY# = GetAbsoluteY(resizingWidget)
-            newW# = MouseX - absX + resizeOffsetX   ; Calculates new width
-            newH# = MouseY - absY + resizeOffsetY   ; Calculates new height
-            If newW < 50 Then newW = 50             ; Minimum width limit
-            If newH < 50 Then newH = 50             ; Minimum height limit
-            resizingWidget\w = newW                 ; Applies new width
-            resizingWidget\h = newH                 ; Applies new height
-            ; Repositions the "X" button in the top-right corner
+            newW# = MouseX - absX + resizeOffsetX   ; Calcule la nouvelle largeur
+            newH# = MouseY - absY + resizeOffsetY   ; Calcule la nouvelle hauteur
+            If newW < 50 Then newW = 50             ; Limite minimale de largeur
+            If newH < 50 Then newH = 50             ; Limite minimale de hauteur
+            resizingWidget\w = newW                 ; Applique la nouvelle largeur
+            resizingWidget\h = newH                 ; Applique la nouvelle hauteur
+            ; Repositionne le bouton "X" dans le coin supérieur droit
             For i = 0 To resizingWidget\childCount - 1
                 If resizingWidget\children[i] <> Null And resizingWidget\children[i]\label = "X" Then
                     resizingWidget\children[i]\x = newW - 20
                 End If
             Next
         Else
-            resizingWidget = Null   ; Stops resizing if released
+            resizingWidget = Null   ; Arrête le redimensionnement si relâché
         End If
     End If
 End Function
 
-; Linear interpolation (not used here, but kept)
+; Interpolation linéaire (non utilisée ici, mais conservée)
 Function Lerp(start#, end#, t#)
     Return start# + (End# - start#) * t#
 End Function
 
-; Recursively updates the depth of a widget's children
+; Met à jour récursivement la profondeur des enfants d'un widget
 Function UpdateChildrenDepth(widget.GuiWidget)
     For i = 0 To widget\childCount - 1
         If widget\children[i] <> Null Then
-            widget\children[i]\depth = widget\depth ; Applies parent's depth
-            UpdateChildrenDepth(widget\children[i]) ; Recursion for sub-children
+            widget\children[i]\depth = widget\depth ; Applique la profondeur du parent
+            UpdateChildrenDepth(widget\children[i]) ; Récursion pour les sous-enfants
         End If
     Next
 End Function
 
-; Deletes a widget and its children recursively
+
 Function DeleteWidget(widget.GuiWidget)
-    If widget = Null Then Return    ; Nothing to do if widget doesn't exist
-    For i = 0 To widget\childCount - 1
-        DeleteWidget(widget\children[i])    ; Deletes children first
-    Next
-    Delete widget   ; Deletes the widget itself
+    If widget = Null Then Return
+    
+    ; Supprime tous les enfants du widget récursivement
+    While widget\childCount > 0
+        DeleteWidget(widget\children[widget\childCount - 1])
+        widget\childCount = widget\childCount - 1
+    Wend
+	
+    ; Vérifie si ce widget est utilisé dans une variable globale
+    If draggingWidget = widget Then draggingWidget = Null
+    If resizingWidget = widget Then resizingWidget = Null
+    If lastHoveredWidget = widget Then lastHoveredWidget = Null
+	
+    ; Supprime le widget
+    Delete widget
 End Function
 
-; Draws all widgets in depth order
+
+; Dessine tous les widgets dans l'ordre de profondeur
 Function DrawWidgets()
-    Cls     ; Clears the screen
-    Local drawn = 0         ; Counter for drawn widgets
-    Local currentDepth = 0  ; Current depth for rendering
-	
-    While drawn < CountWidgets()    ; Until all widgets are drawn
+    Cls     ; Efface l'écran
+    Local drawn = 0         ; Compteur de widgets dessinés
+    Local currentDepth = 0  ; Profondeur actuelle pour le rendu
+    
+    While drawn < CountWidgets()    ; Tant que tous les widgets ne sont pas dessinés
         For widget.GuiWidget = Each GuiWidget
             If widget\depth = currentDepth Then
-                absX# = GetAbsoluteX(widget)    ; Absolute X position
-                absY# = GetAbsoluteY(widget)    ; Absolute Y position
-                If widget\widgetType = 0 Then   ; Drawing windows
-                    Color 100,100,100           ; Gray for body
+                absX# = GetAbsoluteX(widget)    ; Position X absolue
+                absY# = GetAbsoluteY(widget)    ; Position Y absolue
+                If widget\widgetType = 0 Then   ; Dessin des fenêtres
+                    Color 100,100,100           ; Gris pour le corps
                     Rect absX, absY, widget\w, widget\h, 1
-                    Color 0,0,200               ; Blue for title bar
+                    Color 0,0,200               ; Bleu pour la barre de titre
                     Rect absX, absY, widget\w, 20, 1
-                    Color 255,255,255           ; White for text
+                    Color 255,255,255           ; Blanc pour le texte
                     Text absX + 5, absY + 2, widget\label
-                    Color 150,150,150           ; Light gray for resize gadget
+                    Color 150,150,150           ; Gris clair pour le gadget de redimensionnement
                     Rect absX + widget\w - resizeGadgetSize, absY + widget\h - resizeGadgetSize, resizeGadgetSize, resizeGadgetSize, 1
-                ElseIf widget\widgetType = 1 Then   ; Drawing buttons
+                ElseIf widget\widgetType = 1 Then   ; Dessin des boutons
                     If widget\clicked Then
-                        Color 150,150,255       ; Light blue if clicked
+                        Color 150,150,255       ; Bleu clair si cliqué
                     Else
-                        Color 200,200,200       ; Light gray by default
+                        Color 200,200,200       ; Gris clair par défaut
                     End If
                     Rect absX, absY, widget\w, widget\h, 1
-                    Color 0,0,0                 ; Black for text
+                    Color 0,0,0                 ; Noir pour le texte
                     Text absX + 4, absY + 2, widget\label
                 End If
-                drawn = drawn + 1   ; Increments counter
+                drawn = drawn + 1   ; Incrémente le compteur
             End If
         Next
-        currentDepth = currentDepth + 1 ; Moves to next depth
+        currentDepth = currentDepth + 1 ; Passe à la profondeur suivante
     Wend
 End Function
 
-; Displays a temporary message at the top-left corner
+; Affiche un message temporaire en haut à gauche
 Function DrawMessage()
-    If messageTimer > MilliSecs() Then  ; If timer hasn't expired
-        Color 255,255,255               ; White background
+    If messageTimer > MilliSecs() Then  ; Si le timer n'est pas écoulé
+        Color 255,255,255               ; Fond blanc
         Rect 10, 10, StringWidth(message$) + 20, 20, 1
-        Color 0,0,0                     ; Black text
-        Text 20, 12, message$           ; Displays the message
+        Color 0,0,0                     ; Texte noir
+        Text 20, 12, message$           ; Affiche le message
     End If
 End Function
 
-; Counts the total number of existing widgets
+; Compte le nombre total de widgets existants
 Function CountWidgets()
     Local count = 0
     For widget.GuiWidget = Each GuiWidget
-        count = count + 1   ; Increments for each widget
+        count = count + 1   ; Incrémente pour chaque widget
     Next
     Return count
 End Function
+
