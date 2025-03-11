@@ -80,27 +80,31 @@ End Function
 ; Processes queued events
 Function ProcessEvents()
     For ev.Event = Each Event   ; Loops through all events
-        Select ev\eventType     ; Based on event type
-            Case 0 ; Hover
-                message$ = "Hover: " + ev\widget\label    ; Hover message
-                messageTimer = MilliSecs() + 1000         ; Displays for 1 second
-            Case 1 ; Click
-                message$ = "Click on: " + ev\widget\label ; Click message
-                messageTimer = MilliSecs() + 2000         ; Displays for 2 seconds
-            Case 2 ; Release
-                Select ev\widget\label  ; Specific actions based on released button
-                    Case "Button 1"
-                        message$ = "Button 1 released!"
-                        messageTimer = MilliSecs() + 2000
-                    Case "Sub-btn"
-                        message$ = "Sub-button released!"
-                        messageTimer = MilliSecs() + 2000
-                    Default
-                        message$ = "Released: " + ev\widget\label
-                        messageTimer = MilliSecs() + 2000
-                End Select
-        End Select
+		If ev\widget <> Null Then
+			Select ev\eventType     ; Based on event type
+				Case 0 ; Hover
+					message$ = "Hover: " + ev\widget\label    ; Hover message
+					messageTimer = MilliSecs() + 1000         ; Displays for 1 second
+				Case 1 ; Click
+					message$ = "Click on: " + ev\widget\label ; Click message
+					messageTimer = MilliSecs() + 2000         ; Displays for 2 seconds
+				Case 2 ; Release
+					Select ev\widget\label  ; Specific actions based on released button
+						Case "Button 1"
+							message$ = "Button 1 released!"
+							messageTimer = MilliSecs() + 2000
+						Case "Sub-btn"
+							message$ = "Sub-button released!"
+							messageTimer = MilliSecs() + 2000
+						Default
+							message$ = "Released: " + ev\widget\label
+							messageTimer = MilliSecs() + 2000
+					End Select
+			End Select
+		EndIf
+		
         Delete ev   ; Deletes the event after processing
+		
     Next
 End Function
 
@@ -273,7 +277,12 @@ Function UpdateWidgets()
                         DeleteWidget(widget\parent) ; Closes the parent window
                     End If
                     CreateEvent(2, widget)      ; Creates a release event
-                    widget\clicked = False      ; Resets clicked state
+					
+					Return True
+					
+                  ;  widget\clicked = False      ; Resets clicked state
+					
+					
                 Else
                     widget\clicked = False      ; Cancels if released outside button
                 End If
@@ -393,5 +402,3 @@ Function CountWidgets()
     Next
     Return count
 End Function
-;~IDEal Editor Parameters:
-;~C#Blitz3D
