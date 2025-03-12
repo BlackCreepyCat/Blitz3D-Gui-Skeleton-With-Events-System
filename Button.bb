@@ -145,26 +145,21 @@ Function Gui_RedrawButton(Widget.GuiWidget)
 	absX# = GetAbsoluteX(Widget)    ; Position X absolue
 	absY# = GetAbsoluteY(Widget)    ; Position Y absolue
 
-;
-;
-;	If Widget\Hovered = True   Then
-;		Gui_Rect(absX, absY, widget\Sx, widget\Sy , 1 , 100 , 250 , 100  , 0)
-;	Else
-;		Gui_Rect(absX, absY, widget\Sx, widget\Sy , 1 , 200 , 200 , 200  , 0)		
-;	EndIf
-;	
-;	If Widget\Clicked = True   Then
-;		Gui_Rect(absX, absY, widget\Sx, widget\Sy , 1 , 100 , 150 , 200  , 0)
-;	End If
-;
 
-If Widget\Clicked Then
-    Gui_Rect(absX, absY, widget\Sx, widget\Sy, 1, 100, 150, 200, 0)
-ElseIf Widget\Hovered Then
-    Gui_Rect(absX, absY, widget\Sx, widget\Sy, 1, 100, 250, 100, 0)
-Else
-    Gui_Rect(absX, absY, widget\Sx, widget\Sy, 1, 200, 200, 200, 0)
-End If
+
+	If Widget\Clicked Then
+	
+		Gui_Rect(absX, absY, widget\Sx, widget\Sy, 1, 100, 150, 200, 0)
+		
+	ElseIf Widget\Hovered Then
+	
+		Gui_Rect(absX, absY, widget\Sx, widget\Sy, 1, 100, 250, 100, 0)
+		
+	Else
+	
+		Gui_Rect(absX, absY, widget\Sx, widget\Sy, 1, 200, 200, 200, 0)
+		
+	End If
 
 
 	Gui_Text(absX + 4, absY + 2, widget\label ,0,0,0)
