@@ -33,97 +33,153 @@ End Function
 ; Function to update the Windows
 ; ------------------------------
 Function Gui_RefreshWindow()
-    Local Window_TopDepth = -1
-    Local clickedWindow.GuiWidget = Null ; Pour stocker la fenêtre cliquée
-
-    ; Étape 1 : Détermine quelle fenêtre est sous le curseur
+    ; -----------------------------------
+    ; Profondeur maximale sous le curseur
+    ; -----------------------------------
+    Local Window_TopDepth = -1                 
+    Local clickedWindow.GuiWidget = Null ; Fenêtre effectivement cliquée
+    
+    ; ----------------------------------------------------------------------------
+    ; Étape 1 : Détermine quelle fenêtre est sous le curseur pour les interactions
+    ; ----------------------------------------------------------------------------
     For Widget.GuiWidget = Each GuiWidget
+        ; -------------------------------
+        ; Vérifie uniquement les fenêtres
+        ; -------------------------------
         If Widget\WidgetType = Gui_WidgetTypeWindow Then
             absX# = GetAbsoluteX(Widget)
             absY# = GetAbsoluteY(Widget)
             
-            Widget\Hovered = False
-            
             If Gui_TestZone(absX, absY, Widget\Sx, Widget\Sy, False, False) Then
+                ; --------------------------------------------------
+                ; Garde la fenêtre avec la profondeur la plus élevée
+                ; --------------------------------------------------
                 If Widget\depth > Window_TopDepth Then
-                    Gui_CurrentSelectedWindow = Widget
+                    Gui_CurrentSelectedWindow = Widget ; Définit la fenetre active
                     Window_TopDepth = Widget\depth
                 End If
             End If
         End If
     Next
 
-    ; Étape 2 : Gestion des clics
+    ; ----------------------------------------
+    ; Étape 2 : Gestion des clics (Mouse Down)
+    ; ----------------------------------------
     If Gui_MouseClickLeft Then
-        ; Vérifie si le clic est dans la fenêtre sélectionnée
+        ; --------------------------------------------------------------
+        ; Déplacement ou redimensionnement de la fenêtre sous le curseur
+        ; --------------------------------------------------------------
         If Gui_CurrentSelectedWindow <> Null Then
             absX# = GetAbsoluteX(Gui_CurrentSelectedWindow)
             absY# = GetAbsoluteY(Gui_CurrentSelectedWindow)
             
-            ; Confirme que le clic est dans la zone avant toute action
-            If Gui_TestZone(absX, absY, Gui_CurrentSelectedWindow\Sx, Gui_CurrentSelectedWindow\Sy, False, False) Then
+            ; Vérifie si le clic initial est dans la fenêtre (Click = True)
+            If Gui_TestZone(absX, absY, Gui_CurrentSelectedWindow\Sx, Gui_CurrentSelectedWindow\Sy, True, False) Then
                 clickedWindow = Gui_CurrentSelectedWindow
-                Gui_CurrentSelectedWindow\Hovered = True
                 
-                ; Gestion du redimensionnement
-                If Gui_TestZone(absX + Gui_CurrentSelectedWindow\Sx - Gui_WindowSizeIcon, absY + Gui_CurrentSelectedWindow\Sy - Gui_WindowSizeIcon, Gui_WindowSizeIcon, Gui_WindowSizeIcon, False, False) Then
-                    Gui_CurrentSizedWindow = Gui_CurrentSelectedWindow
-                    Gui_CurrentSelectedWindow\SizeOffsetX# = absX + Gui_CurrentSelectedWindow\Sx - Gui_MouseX
-                    Gui_CurrentSelectedWindow\SizeOffsetY# = absY + Gui_CurrentSelectedWindow\Sy - Gui_MouseY
-                ; Gestion du déplacement
-                ElseIf Gui_MouseY% < absY + 20 Then
-                    Local closeButtonX# = Gui_CurrentSelectedWindow\Sx - 20
-                    Local closeButtonY# = 20
-                    If Gui_TestZone(absX, absY, closeButtonX, closeButtonY, False, False) Then
-                        Gui_CurrentDraggedWindow = Gui_CurrentSelectedWindow
-                        Gui_CurrentDraggedWindow\DragOffsetX = Gui_MouseX - absX
+                ; --------------------------------------------------------------------------
+                ; Vérifie si le clic est sur le gadget de redimensionnement (coin bas-droit)
+                ; --------------------------------------------------------------------------
+                If Gui_TestZone(absX + Gui_CurrentSelectedWindow\Sx - Gui_WindowSizeIcon, absY + Gui_CurrentSelectedWindow\Sy - Gui_WindowSizeIcon, Gui_WindowSizeIcon, Gui_WindowSizeIcon, True, False) Then
+                    Gui_CurrentSizedWindow = Gui_CurrentSelectedWindow      ; Active le redimensionnement
+                    Gui_CurrentSelectedWindow\SizeOffsetX# = absX + Gui_CurrentSelectedWindow\Sx - Gui_MouseX ; Calcule le décalage X
+                    Gui_CurrentSelectedWindow\SizeOffsetY# = absY + Gui_CurrentSelectedWindow\Sy - Gui_MouseY ; Calcule le décalage Y
+                
+                ; -----------------------------------------------------------------
+                ; Vérifie si le clic est dans la barre de titre pour le déplacement
+                ; -----------------------------------------------------------------
+                ElseIf Gui_MouseClickLeft_Y < absY + 20 Then
+                    Local closeButtonX# = Gui_CurrentSelectedWindow\Sx - 20   	; Position X du bouton "X"
+                    Local closeButtonY# = 20 					 				; Taille Y du bouton "X"
+                    
+                    ; -------------------------------------------------------------
+                    ; Active le déplacement si le clic n'est pas près du bouton "X"
+                    ; -------------------------------------------------------------
+                    If Not Gui_TestZone(absX + closeButtonX, absY, 16, 16, True, False) Then ; Évite le bouton "X"
+                        Gui_CurrentDraggedWindow = Gui_CurrentSelectedWindow      ; Active le déplacement
+                        Gui_CurrentDraggedWindow\DragOffsetX = Gui_MouseX - absX 
                         Gui_CurrentDraggedWindow\DragOffsetY = Gui_MouseY - absY
                     End If
                 End If
                 
-                ; Mise au premier plan uniquement si clic valide
+                ; --------------------------------------
+                ; Met la fenêtre cliquée au premier plan
+                ; --------------------------------------
                 Local OldDepth = clickedWindow\Depth
                 For widget.GuiWidget = Each GuiWidget
-                    If widget\depth > OldDepth Then widget\depth = widget\depth - 1
+                    If widget\depth > OldDepth Then widget\depth = widget\depth - 1 ; Décale les autres
                 Next
-                clickedWindow\depth = Gui_Widget_HighestDepth - 1
-                UpdateChildrenDepth(clickedWindow)
+                clickedWindow\depth = Gui_Widget_HighestDepth - 1   ; Place la fenêtre au sommet
+                UpdateChildrenDepth(clickedWindow)                  ; Met à jour la profondeur des enfants
             Else
-                ; Réinitialise si le clic est hors de la fenêtre
+                ; Réinitialise si clic hors de toute fenêtre
                 Gui_CurrentSelectedWindow = Null
             End If
-        End If
-    End If
-
-    ; Étape 3 et 4 : Déplacement et redimensionnement (inchangés)
-    If Gui_CurrentDraggedWindow <> Null Then
-        If Gui_MousePressLeft Then
-            Gui_CurrentDraggedWindow\Px = Gui_MouseX - Gui_CurrentDraggedWindow\DragOffsetX
-            Gui_CurrentDraggedWindow\Py = Gui_MouseY - Gui_CurrentDraggedWindow\DragOffsetY
         Else
-            Gui_CurrentDraggedWindow = Null
+            Gui_CurrentSelectedWindow = Null ; Aucun clic valide détecté
         End If
+    EndIf
+
+    ; -----------------------------------------
+    ; Étape 3 : Gestion continue du déplacement
+	; -----------------------------------------
+    If Gui_CurrentDraggedWindow <> Null Then
+	
+        ; -----------------------------
+        ; Tant que le clic est maintenu
+        ; -----------------------------
+        If Gui_MousePressLeft Then
+		
+            Gui_CurrentDraggedWindow\Px = Gui_MouseX - Gui_CurrentDraggedWindow\DragOffsetX ; Met à jour la position X
+            Gui_CurrentDraggedWindow\Py = Gui_MouseY - Gui_CurrentDraggedWindow\DragOffsetY ; Met à jour la position Y
+			
+        Else
+		
+            Gui_CurrentDraggedWindow = Null   ; Arrête le déplacement si relâché
+			
+        End If
+		
     End If
 
+    ; -----------------------------------------------
+	; Étape 4 : Gestion continue du redimensionnement
+    ; -----------------------------------------------
     If Gui_CurrentSizedWindow <> Null Then
-        If Gui_MousePressLeft Then
+
+        ; -----------------------------
+        ; Tant que le clic est maintenu
+        ; -----------------------------
+        If Gui_MousePressLeft Then    											
+		
             absX# = GetAbsoluteX(Gui_CurrentSizedWindow)
             absY# = GetAbsoluteY(Gui_CurrentSizedWindow)
-            newW# = Gui_MouseX% - absX + Gui_CurrentSizedWindow\SizeOffsetX#
-            newH# = Gui_MouseY% - absY + Gui_CurrentSizedWindow\SizeOffsetY#
-            If newW < Gui_CurrentSizedWindow\MinSx# Then newW = Gui_CurrentSizedWindow\MinSx#
-            If newH < Gui_CurrentSizedWindow\MinSy# Then newH = Gui_CurrentSizedWindow\MinSy#
-            Gui_CurrentSizedWindow\Sx = newW
-            Gui_CurrentSizedWindow\Sy = newH
+            
+            newW# = Gui_MouseX% - absX + Gui_CurrentSizedWindow\SizeOffsetX#   	; Calcule la nouvelle largeur
+            newH# = Gui_MouseY% - absY + Gui_CurrentSizedWindow\SizeOffsetY#  	; Calcule la nouvelle hauteur
+            
+            If newW < Gui_CurrentSizedWindow\MinSx# Then newW = Gui_CurrentSizedWindow\MinSx#           		; Limite minimale de largeur
+            If newH < Gui_CurrentSizedWindow\MinSy# Then newH = Gui_CurrentSizedWindow\MinSy#             		; Limite minimale de hauteur
+            
+            Gui_CurrentSizedWindow\Sx = newW                ; Applique la nouvelle largeur
+            Gui_CurrentSizedWindow\Sy = newH                ; Applique la nouvelle hauteur
+            
+            ; -------------------------------------------------------
+            ; Repositionne le bouton "X" dans le coin supérieur droit
+            ; -------------------------------------------------------
             For i = 0 To Gui_CurrentSizedWindow\childCount - 1
                 If Gui_CurrentSizedWindow\children[i] <> Null And Gui_CurrentSizedWindow\children[i]\label = "X" Then
                     Gui_CurrentSizedWindow\children[i]\Px = newW - 20
                 End If
             Next
+			
         Else
-            Gui_CurrentSizedWindow = Null
+		
+            Gui_CurrentSizedWindow = Null   ; Arrête le redimensionnement si relâché
+			
         End If
+		
     End If
+	
 End Function
 
 ; ------------------------------------
@@ -134,20 +190,21 @@ Function Gui_RedrawWindow(Widget.GuiWidget)
     absY# = GetAbsoluteY(widget)    ; Position Y absolue
 
     ; Gris pour le corps
-    Gui_Rect(absX, absY, widget\Sx, widget\Sy , 1 , 100 , 100 , 100  , 0)
+    Gui_Rect(absX, absY, widget\Sx, widget\Sy, 1, 100, 100, 100, 0)
 
-    ; Bleu pour la barre de titre
+    ; Couleur de la barre de titre : deux états seulement
     If Widget\Depth = Gui_Widget_HighestDepth - 1 Then
-        If Widget\Hovered = False
-            Gui_Rect(absX, absY, widget\Sx, 20 , 1 , 50 , 100 , 150  , 0)
-        EndIf
+        ; Rouge si sélectionnée (au premier plan)
+        Gui_Rect(absX, absY, widget\Sx, 20, 1, 150, 50, 50, 0)
     Else
-        Gui_Rect(absX, absY, widget\Sx, 20 , 1 , 150 , 100 , 100  , 0)
-    EndIf
+        ; Gris foncé si non sélectionnée (en arrière-plan)
+        Gui_Rect(absX, absY, widget\Sx, 20, 1, 50, 50, 50, 0)
+    End If
     
     ; Blanc pour le texte
-    Gui_Text(absX + 5, absY + 2, widget\label , 255,255,255 , 1)
+    Gui_Text(absX + 5, absY + 2, widget\label, 255, 255, 255, 1)
     
-    Color 150,150,150           ; Gris clair pour le gadget de redimensionnement
-    Rect absX + widget\Sx - Gui_WindowSizeIcon, absY + widget\Sy - Gui_WindowSizeIcon, Gui_WindowSizeIcon, Gui_WindowSizeIcon, 1
+    ; Gris clair pour le gadget de redimensionnement
+	Gui_Rect(absX + widget\Sx - Gui_WindowSizeIcon, absY + widget\Sy - Gui_WindowSizeIcon, Gui_WindowSizeIcon, Gui_WindowSizeIcon, 1, 100, 160, 100, 0)
+
 End Function

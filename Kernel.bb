@@ -18,7 +18,7 @@ Type GuiWidget
 	
     Field Active            		; Active state (not used yet)
 	
-	Field Hovered					; Indicates if the mouse is on the widget
+	Field Hovered 					; Indicates if the mouse is on the widget
     Field Clicked           		; Indicates if the button is clicked
 	
     Field Label$            		; Text displayed on the widget
@@ -62,6 +62,7 @@ Function Gui_RefreshWidgets()
 	; -------------------------------
 	; En premier j'update les widgets
 	; -------------------------------
+	Gui_RefreshMouse()
 	Gui_RefreshWindow()
 	Gui_RefreshButton()
 
@@ -104,7 +105,7 @@ Function Gui_RefreshWidgets()
 
     Wend
 
-	Gui_RefreshMouse()
+
 
 End Function
 
