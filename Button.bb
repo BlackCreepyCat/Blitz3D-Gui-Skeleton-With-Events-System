@@ -59,16 +59,18 @@ Function Gui_RefreshButton()
 				; ------------------------------------------------------------
                 ; Survol (seulement si pas cliqué et à la profondeur maximale)
  				; ------------------------------------------------------------			
-                If Widget\Depth = Gui_Widget_HighestDepth - 1 And Widget\clicked = False Then
+                If Widget\Depth = Gui_Widget_HighestDepth - 1 And Widget\Clicked = False Then
 				
                     HoveredWidget = Widget
+					Widget\Hovered = True
 					
                     ; ----------------------
                     ; Nouveau survol détecté
                     ; ----------------------
                     If HoveredWidget <> Gui_LastHoveredWidget Then  
                         Gui_CreateEvent(Gui_WidgetStateHover, HoveredWidget)       ; Crée un événement de survol
-						
+
+					
                         Gui_LastHoveredWidget = HoveredWidget
                     End If
 					
@@ -83,13 +85,19 @@ Function Gui_RefreshButton()
                     ; Vérifie la zone et aussi si c'est un bouton a la profondeur maximale
                     ; --------------------------------------------------------------------
                     If Widget\Depth > ClickedDepth Then
+					
                         If Gui_CurrentSelectedWindow = Null Or Widget\depth = Gui_CurrentSelectedWindow\depth Then
                             ClickedWidget = Widget
                             ClickedDepth = Widget\depth
                         End If
+						
                     End If
 					
                 End If
+
+			Else
+			
+				Widget\Hovered = False
 				
             End If
 
@@ -98,11 +106,13 @@ Function Gui_RefreshButton()
 			; ----------------------
             If Widget\clicked And Gui_MouseReleaseLeft Then
 			
-                If Gui_TestZone(absX , absY , widget\Sx , widget\Sy , False , False) Then
-                    Gui_CreateEvent(Gui_WidgetStateReleaseed, Widget)      ; Crée un événement de relâchement
+                ;If Gui_TestZone(absX , absY , widget\Sx , widget\Sy , False , False) Then
+				If Widget\Hovered = True
+				
+                    Gui_CreateEvent(Gui_WidgetStateReleased, Widget)      ; Crée un événement de relâchement
                     Return True
                 Else
-                    Widget\clicked = False      ; Annule si relâché hors du bouton
+                    Widget\Clicked = False      ; Annule si relâché hors du bouton
                 End If
 				
             End If
@@ -134,12 +144,29 @@ Function Gui_RedrawButton(Widget.GuiWidget)
 
 	absX# = GetAbsoluteX(Widget)    ; Position X absolue
 	absY# = GetAbsoluteY(Widget)    ; Position Y absolue
-	
-	If Widget\Clicked Then
-		Gui_Rect(absX, absY, widget\Sx, widget\Sy , 1 , 100 , 150 , 200  , 0)
-	Else
-		Gui_Rect(absX, absY, widget\Sx, widget\Sy , 1 , 200 , 200 , 200  , 0)
-	End If
-	
+
+;
+;
+;	If Widget\Hovered = True   Then
+;		Gui_Rect(absX, absY, widget\Sx, widget\Sy , 1 , 100 , 250 , 100  , 0)
+;	Else
+;		Gui_Rect(absX, absY, widget\Sx, widget\Sy , 1 , 200 , 200 , 200  , 0)		
+;	EndIf
+;	
+;	If Widget\Clicked = True   Then
+;		Gui_Rect(absX, absY, widget\Sx, widget\Sy , 1 , 100 , 150 , 200  , 0)
+;	End If
+;
+
+If Widget\Clicked Then
+    Gui_Rect(absX, absY, widget\Sx, widget\Sy, 1, 100, 150, 200, 0)
+ElseIf Widget\Hovered Then
+    Gui_Rect(absX, absY, widget\Sx, widget\Sy, 1, 100, 250, 100, 0)
+Else
+    Gui_Rect(absX, absY, widget\Sx, widget\Sy, 1, 200, 200, 200, 0)
+End If
+
+
 	Gui_Text(absX + 4, absY + 2, widget\label ,0,0,0)
+	
 End Function

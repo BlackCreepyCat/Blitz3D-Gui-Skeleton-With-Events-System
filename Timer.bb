@@ -6,9 +6,9 @@ Type GuiTimer
 	Field TimeOut%
 End Type
 
-; -----------------------------
-; Usefull to create timed event
-; -----------------------------
+; --------------------------------------
+; Public : Usefull to create timed event
+; --------------------------------------
 Function Gui_SetTimer.GuiTimer(TimeOut)
 	This.GuiTimer = New GuiTimer
 	This\Start   = MilliSecs() 

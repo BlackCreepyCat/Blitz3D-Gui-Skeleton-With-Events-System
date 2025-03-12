@@ -395,8 +395,12 @@ Function Gui_RedrawWindow(Widget.GuiWidget)
 	Gui_Rect(absX, absY, widget\Sx, widget\Sy , 1 , 100 , 100 , 100  , 0)
 
 	; Bleu pour la barre de titre
-	Gui_Rect(absX, absY, widget\Sx, 20 , 1 , 100 , 150 , 200  , 0)
-
+	If Gui_CurrentSelectedWindow = Widget Then
+		Gui_Rect(absX, absY, widget\Sx, 20 , 1 , 100 , 150 , 200  , 0)
+	Else
+		Gui_Rect(absX, absY, widget\Sx, 20 , 1 , 50 , 100 , 100  , 0)
+	EndIf
+	
 	; Blanc pour le texte
 	Gui_Text(absX + 5, absY + 2, widget\label , 255,255,255 , 1)
 	

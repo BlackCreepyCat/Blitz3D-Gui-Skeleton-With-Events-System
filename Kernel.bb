@@ -17,6 +17,8 @@ Type GuiWidget
 	
 	
     Field Active            		; Active state (not used yet)
+	
+	Field Hovered					; Indicates if the mouse is on the widget
     Field Clicked           		; Indicates if the button is clicked
 	
     Field Label$            		; Text displayed on the widget

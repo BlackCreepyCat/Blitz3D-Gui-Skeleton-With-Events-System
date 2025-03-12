@@ -17,6 +17,8 @@ SetBuffer BackBuffer()
 Global message$ = ""                      ; Temporary message to display
 Global messageTimer = 0                   ; Timer for message display duration
 
+Gui_InitGui()
+
 ; Creating test widgets to check functionality
 win1.GuiWidget = Gui_CreateWindow(100,100,300,200,"Window 1")    	; Window at (100,100), size 300x200
 btn1.GuiWidget = CreateButton(win1, 10, 30, 80, 20, "Button 1") 	; Button inside Window 1
@@ -63,7 +65,7 @@ Function Gui_ProcessEvents()
                     message$ = "Click on: " + ev\widget\label ; Click message
                     messageTimer = MilliSecs() + 2000         ; Display for 2 seconds
 					
-                Case Gui_WidgetStateReleaseed ; Release
+                Case Gui_WidgetStateReleased ; Release
 				
                     If ev\widget\widgetType = Gui_WidgetTypeButton Then
                         ev\widget\clicked = False ; Reset button state

@@ -9,7 +9,7 @@ End Type
 
 Global Gui_WidgetStateHover	= 2456
 Global Gui_WidgetStateClicked = 2457
-Global Gui_WidgetStateReleaseed = 2458
+Global Gui_WidgetStateReleased = 2458
 
 ; ----------------------------
 ; Public : Creates a new event
@@ -22,6 +22,7 @@ Function Gui_CreateEvent(EventType, Widget.GuiWidget)
     Ev\timestamp = MilliSecs()  ; Records the current time
 	
     Return Handle(Ev)           ; Returns an event handle
+	
 End Function
 
 ; ---------------------------------
@@ -32,4 +33,5 @@ Function Gui_PurgeEvent()
 	For ev.GuiEvent = Each GuiEvent  
         Delete ev   
     Next
+	
 End Function

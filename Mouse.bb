@@ -170,9 +170,9 @@ Function Gui_InitMouse()
 	
 End Function
 
-; --------------------------------------------
-; Internal : Test If the mouse is under a zone
-; --------------------------------------------
+; ------------------------------------------
+; Public : Test If the mouse is under a zone
+; ------------------------------------------
 Function Gui_TestZone(Px , Py , Sx , Sy , Click=False , Debug=False)		
 
 	If Gui_MouseX>=Px And Gui_MouseX<=Px+Sx And Gui_MouseY>=Py And Gui_MouseY<=Py+Sy Then
