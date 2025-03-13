@@ -14,12 +14,14 @@ Type GuiWidget
 	Field SizeOffsetX#
 	Field SizeOffsetY#
 
-	
+	Field Modal						; For windows
 	
     Field Active            		; Active state (not used yet)
 	
 	Field Hovered 					; Indicates if the mouse is on the widget
     Field Clicked           		; Indicates if the button is clicked
+	
+	Field State						; For checkbox
 	
     Field Label$            		; Text displayed on the widget
 
@@ -257,3 +259,5 @@ End Function
 Function Lerp(start#, End#, t#)
     Return start# + (End# - start#) * t#
 End Function
+;~IDEal Editor Parameters:
+;~C#Blitz3D

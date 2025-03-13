@@ -27,6 +27,8 @@ btn3.GuiWidget = CreateButton(btn2, 5, 25, 100, 20, "SubSub-btn") 	; Child butto
 win2.GuiWidget = Gui_CreateWindow(150,150,300,200,"Window 2")    	; Second window
 CreateButton(win2, 10, 30, 80, 20, "Test")                  		; Button inside Window 2
 
+win3.GuiWidget = Gui_CreateWindow(250,250,300,200,"MODAL WINDOW, CLOSE ME!",True)
+
 ; Main program loop
 While Not KeyHit(1) ; Until the Escape key is pressed
 	Cls
@@ -113,3 +115,6 @@ End Function
 
 
 
+
+;~IDEal Editor Parameters:
+;~C#Blitz3D
