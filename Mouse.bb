@@ -167,7 +167,6 @@ End Function
 Function Gui_InitMouse()
 	;Gui_MousePointer% = Gui_LoadImageFromData("Pointer_A")
 	;HidePointer
-	
 End Function
 
 ; ------------------------------------------
@@ -197,3 +196,6 @@ Function Gui_TestZone(Px , Py , Sx , Sy , Click=False , Debug=False)
 	EndIf
 	
 End Function
+
+;~IDEal Editor Parameters:
+;~C#Blitz3D

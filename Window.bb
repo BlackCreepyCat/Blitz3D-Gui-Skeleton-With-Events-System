@@ -39,7 +39,7 @@ Function Gui_CreateWindow.GuiWidget(Px#, Py#, Sx#, Sy#, Label$, Sizable = True ,
     Win\Active = True
     
     ; Add the "X" button to close
-    btn.GuiWidget = CreateButton(Win, Win\Sx# - 18, 2, 16, 16, "X")
+    Win\CloseButton = CreateButton(Win, Win\Sx# - 18, 2, 16, 16, "X")
     
     Return Win
 End Function
@@ -62,7 +62,7 @@ Function Gui_RefreshWindow()
             Exit
         End If
     Next
-    
+	
     ; ------------------------------
     ; Maximum depth under the cursor
     ; ------------------------------

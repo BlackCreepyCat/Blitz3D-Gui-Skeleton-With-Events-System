@@ -2,11 +2,13 @@
 ; Definition of the GuiWidget Type for interface elements
 ; -------------------------------------------------------
 Type GuiWidget
-    Field Px#, Py#             ; Coordinates relative to the parent (float)
-    Field Sx#, Sy#             ; Width and height (float)
+    Field Px#, Py#             		; Coordinates relative to the parent (float)
+    Field Sx#, Sy#             		; Width and height (float)
 	
-    Field MinSx#               ; Minimum Size X for windows
-    Field MinSy#               ; Minimum Size Y for windows
+    Field MinSx#               		; Minimum Size X for windows
+    Field MinSy#               		; Minimum Size Y for windows
+	
+	Field CloseButton.GuiWidget		; Close button for windows
     
     Field DragOffsetX#
     Field DragOffsetY#
@@ -43,6 +45,7 @@ Global Gui_CurrentSizedWindow.GuiWidget = Null      ; Widget being resized
 
 Global Gui_WidgetTypeWindow = 1234
 Global Gui_WidgetTypeButton = 1235
+Global Gui_WidgetTypeCheckbox = 1236
 
 Global Gui_WindowTitleHeight = 20
 Global Gui_WindowSizeIcon = 10
@@ -60,51 +63,42 @@ End Function
 ; Internal: Refresh the GUI
 ; --------------------------
 Function Gui_RefreshWidgets()
-    ; -------------------------
+	
     ; First, update the widgets
-    ; -------------------------
     Gui_RefreshMouse()
     Gui_RefreshWindow()
-    Gui_RefreshButton()
+    Gui_RefreshWidget()
 	
-    ; -------------------------------
     ; Draw all widgets in depth order
-    ; -------------------------------
-    Local Drawn = 0         ; Counter of drawn widgets
-    Local CurrentDepth = 0  ; Current depth for rendering
+    Local Drawn = 0
+    Local CurrentDepth = 0
 	
-    ; -------------------------------
-    ; While not all widgets are drawn
-    ; -------------------------------
     While Drawn < Gui_CountWidgets()
-		
         For Widget.GuiWidget = Each GuiWidget
             If Widget\Depth = CurrentDepth Then
 				
                 Select Widget\WidgetType
 						
-                ; ---------------
-                ; Drawing windows
-                ; ---------------
 					Case Gui_WidgetTypeWindow 
+						
 						Gui_RedrawWindow(Widget)
 						
-                ; ---------------
-                ; Drawing buttons
-                ; ---------------
-					Case Gui_WidgetTypeButton
-						Gui_RedrawButton(Widget)
+					Default
+						
+                        Gui_RedrawWidget(Widget)
 						
                 End Select
-                
-                Drawn = Drawn + 1   ; Increment the counter
-                
+				
+                Drawn = Drawn + 1
+				
             End If
         Next
-        
-        CurrentDepth = CurrentDepth + 1 ; Move to the next depth
 		
+        CurrentDepth = CurrentDepth + 1
     Wend
+	
+	
+	
 End Function
 
 ; -------------------------------------------
@@ -112,9 +106,11 @@ End Function
 ; -------------------------------------------
 Function Gui_CountWidgets()
     Local count = 0
+	
     For widget.GuiWidget = Each GuiWidget
         count = count + 1   ; Increment for each widget
     Next
+	
     Return count
 End Function
 
@@ -252,4 +248,5 @@ Function Lerp(start#, End#, t#)
     Return start# + (End# - start#) * t#
 End Function
 ;~IDEal Editor Parameters:
+;~F#39#6A#77#81#9F#AD#C7#D2#D6#E7#F6
 ;~C#Blitz3D

@@ -8,7 +8,7 @@ Include "Timer.bb"
 Include "Kernel.bb"
 Include "Events.bb"
 Include "Window.bb"
-Include "Button.bb"
+Include "Widget.bb"
 
 
 Graphics3D 800,600,16,2
@@ -28,6 +28,9 @@ win2.GuiWidget = Gui_CreateWindow(150,150,300,200,"Window 2")    	; Second windo
 CreateButton(win2, 10, 30, 80, 20, "Test")                  		; Button inside Window 2
 
 win3.GuiWidget = Gui_CreateWindow(250,250,300,200,"MODAL WINDOW, CLOSE ME!",False, True)
+chk.GuiWidget = CreateCheckbox(win3, 10, 40, 100, "Check", False)
+
+Global btn10.GuiWidget
 
 ; Main program loop
 While Not KeyHit(1) ; Until the Escape key is pressed
@@ -35,8 +38,8 @@ While Not KeyHit(1) ; Until the Escape key is pressed
 	RenderWorld
 	
 	Gui_RefreshWidgets()
-    Gui_ProcessEvents()         ; Processes generated events (hover, click, release)	
-          
+	
+	Gui_ProcessEvents()         ; Processes generated events (hover, click, release)	         
     Gui_DrawMessage()           ; Displays a temporary message if needed
 
     If win1 <> Null
@@ -77,21 +80,26 @@ Function Gui_ProcessEvents()
                         Case "Button 1"
                             message$ = "Button 1 released!"
                             messageTimer = MilliSecs() + 2000
+							
                             win3.GuiWidget = Gui_CreateWindow(Rnd(150,350),Rnd(150,350),300,200,"Window X") 
+							btn10.GuiWidget = CreateButton(win3, 10, 30, 80, 20, "Hello World") 
+							
+							
                         Case "Sub-btn"
+							
                             message$ = "Sub-button released!"
                             messageTimer = MilliSecs() + 2000
+							
                         Default
 						
                             message$ = "Released: " + ev\widget\label
                             messageTimer = MilliSecs() + 2000
-
-							; The window automatic close function
-							If ev\widget\label = "X" Then  ; Si c'est le bouton "X"
-								DeleteWidget(ev\widget\parent) ; Ferme la fenêtre parente
-							End If
-
+							
                     End Select
+					
+					
+					If (ev\widget = btn10) Then End
+					
             End Select
 			
         EndIf
