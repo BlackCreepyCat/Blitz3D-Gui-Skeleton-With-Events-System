@@ -8,37 +8,37 @@ Function Gui_CreateWindow.GuiWidget(Px#, Py#, Sx#, Sy#, Label$, Sizable = True ,
     Win\Py# = Py#
     Win\Sx# = Sx#
     Win\Sy# = Sy#
-	
+    
     Win\MinSx# = Sx# / 2
     Win\MinSy# = Sy# / 2
     
     Win\Label = Label
     Win\Modal = Modal
-	Win\Sizable = Sizable
+    Win\Sizable = Sizable
     
     Win\WidgetType = Gui_WidgetTypeWindow
     
-	; ------------------------
-    ; Gestion de la profondeur
-	; ------------------------
+    ; ----------------
+    ; Depth management
+    ; ----------------
     If Win\Modal Then
-		
-		; ----------------------------------------
-        ; Place la fenêtre modale au sommet absolu
-		; ----------------------------------------
+        
+        ; ------------------------------------------
+        ; Place the modal window at the absolute top
+        ; ------------------------------------------
         Win\Depth = Gui_Widget_HighestDepth + 1
         Gui_Widget_HighestDepth = Win\Depth + 1
-		
+        
     Else
-		
+        
         Win\Depth = Gui_Widget_HighestDepth
         Gui_Widget_HighestDepth = Gui_Widget_HighestDepth + 1
-		
+        
     End If
     
     Win\Active = True
     
-    ; Ajout du bouton "X" pour fermer
+    ; Add the "X" button to close
     btn.GuiWidget = CreateButton(Win, Win\Sx# - 18, 2, 16, 16, "X")
     
     Return Win
@@ -49,9 +49,9 @@ End Function
 ; ------------------------------
 Function Gui_RefreshWindow()
     
-    ; ------------------------------------------	
-    ; Vérifie s'il y a une fenêtre modale active
-    ; ------------------------------------------
+    ; ----------------------------------------	
+    ; Check if there is an active modal window
+    ; ----------------------------------------
     Local HasModal = False
     Local ModalWindow.GuiWidget = Null
     
@@ -63,20 +63,20 @@ Function Gui_RefreshWindow()
         End If
     Next
     
-    ; -----------------------------------
-    ; Profondeur maximale sous le curseur
-    ; -----------------------------------
+    ; ------------------------------
+    ; Maximum depth under the cursor
+    ; ------------------------------
     Local Window_TopDepth = -1                 
-    Local ClickedWindow.GuiWidget = Null ; Fenêtre effectivement cliquée
+    Local ClickedWindow.GuiWidget = Null ; Actually clicked window
     
-    ; ----------------------------------------------------------------------------
-    ; Étape 1 : Détermine quelle fenêtre est sous le curseur pour les interactions
-    ; ----------------------------------------------------------------------------
+    ; -------------------------------------------------------------------
+    ; Step 1: Determine which window is under the cursor for interactions
+    ; -------------------------------------------------------------------
     For Widget.GuiWidget = Each GuiWidget
         
-        ; -------------------------------
-        ; Vérifie uniquement les fenêtres
-        ; -------------------------------
+        ; ------------------
+        ; Check only windows
+        ; ------------------
         If Widget\WidgetType = Gui_WidgetTypeWindow Then
             
             absX# = GetAbsoluteX(Widget)
@@ -84,13 +84,13 @@ Function Gui_RefreshWindow()
             
             If Gui_TestZone(absX, absY, Widget\Sx, Widget\Sy, False, False) Then
                 
-                ; --------------------------------------------------
-                ; Garde la fenêtre avec la profondeur la plus élevée
-                ; --------------------------------------------------
+                ; --------------------------------------
+                ; Keep the window with the highest depth
+                ; --------------------------------------
                 If (HasModal And Widget = ModalWindow) Or (Not HasModal) Then
                     
                     If Widget\Depth > Window_TopDepth Then
-                        Gui_CurrentSelectedWindow = Widget ; Définit la fenêtre active
+                        Gui_CurrentSelectedWindow = Widget ; Set the active window
                         Window_TopDepth = Widget\Depth
                     End If
                     
@@ -102,52 +102,52 @@ Function Gui_RefreshWindow()
         
     Next
     
-    ; ----------------------------------------
-    ; Étape 2 : Gestion des clics (Mouse Down)
-    ; ----------------------------------------
+    ; ----------------------------------
+    ; Step 2: Handle clicks (Mouse Down)
+    ; ----------------------------------
     If Gui_MouseClickLeft Then
         
-        ; --------------------------------------------------------------
-        ; Déplacement ou redimensionnement de la fenêtre sous le curseur
-        ; --------------------------------------------------------------
+        ; ------------------------------------------
+        ; Move or resize the window under the cursor
+        ; ------------------------------------------
         If Gui_CurrentSelectedWindow <> Null Then
             
             absX# = GetAbsoluteX(Gui_CurrentSelectedWindow)
             absY# = GetAbsoluteY(Gui_CurrentSelectedWindow)
             
-            ; -------------------------------------------------------------
-            ; Vérifie si le clic initial est dans la fenêtre (Click = True)
-            ; -------------------------------------------------------------
+            ; ----------------------------------------------------------
+            ; Check if the initial click is in the window (Click = True)
+            ; ----------------------------------------------------------
             If Gui_TestZone(absX, absY, Gui_CurrentSelectedWindow\Sx, Gui_CurrentSelectedWindow\Sy, True, False) Then
                 
                 ClickedWindow = Gui_CurrentSelectedWindow
                 
-                ; --------------------------------------------------------------------------
-                ; Vérifie si le clic est sur le gadget de redimensionnement (coin bas-droit)
-                ; --------------------------------------------------------------------------
-                If Gui_CurrentSelectedWindow\Sizable Then ; Ajout de la condition Sizable
+                ; ----------------------------------------------------------------
+                ; Check if the click is on the resize gadget (bottom-right corner)
+                ; ----------------------------------------------------------------
+                If Gui_CurrentSelectedWindow\Sizable Then ; Added Sizable condition
                     If Gui_TestZone(absX + Gui_CurrentSelectedWindow\Sx - Gui_WindowSizeIcon, absY + Gui_CurrentSelectedWindow\Sy - Gui_WindowSizeIcon, Gui_WindowSizeIcon, Gui_WindowSizeIcon, True, False) Then
-						
-                        Gui_CurrentSizedWindow = Gui_CurrentSelectedWindow      									; Active le redimensionnement
-                        Gui_CurrentSelectedWindow\SizeOffsetX# = absX + Gui_CurrentSelectedWindow\Sx - Gui_MouseX 	; Calcule le décalage X
-                        Gui_CurrentSelectedWindow\SizeOffsetY# = absY + Gui_CurrentSelectedWindow\Sy - Gui_MouseY 	; Calcule le décalage Y
-						
+                        
+                        Gui_CurrentSizedWindow = Gui_CurrentSelectedWindow      									; Enable resizing
+                        Gui_CurrentSelectedWindow\SizeOffsetX# = absX + Gui_CurrentSelectedWindow\Sx - Gui_MouseX 	; Calculate X offset
+                        Gui_CurrentSelectedWindow\SizeOffsetY# = absY + Gui_CurrentSelectedWindow\Sy - Gui_MouseY 	; Calculate Y offset
+                        
                     End If
                 End If
                 
-                ; -----------------------------------------------------------------
-                ; Vérifie si le clic est dans la barre de titre pour le déplacement
-                ; -----------------------------------------------------------------
+                ; ---------------------------------------------------
+                ; Check if the click is in the title bar for dragging
+                ; ---------------------------------------------------
                 If Gui_MouseClickLeft_Y < absY + 20 Then
                     
-                    Local closeButtonX# = Gui_CurrentSelectedWindow\Sx - 20   									; Position X du bouton "X"
-                    Local closeButtonY# = 20 					 												; Taille Y du bouton "X"
+                    Local closeButtonX# = Gui_CurrentSelectedWindow\Sx - 20   									; "X" button X position
+                    Local closeButtonY# = 20 					 												; "X" button Y size
                     
-                    ; -------------------------------------------------------------
-                    ; Active le déplacement si le clic n'est pas près du bouton "X"
-                    ; -------------------------------------------------------------
-                    If Gui_TestZone(absX + closeButtonX, absY, 16, 16, True, False) = False Then 				; Évite le bouton "X"
-                        Gui_CurrentDraggedWindow = Gui_CurrentSelectedWindow      								; Active le déplacement
+                    ; -------------------------------------------------------
+                    ; Enable dragging if the click is not near the "X" button
+                    ; -------------------------------------------------------
+                    If Gui_TestZone(absX + closeButtonX, absY, 16, 16, True, False) = False Then 				; Avoid the "X" button
+                        Gui_CurrentDraggedWindow = Gui_CurrentSelectedWindow      								; Enable dragging
                         Gui_CurrentDraggedWindow\DragOffsetX = Gui_MouseX - absX 
                         Gui_CurrentDraggedWindow\DragOffsetY = Gui_MouseY - absY
                     End If
@@ -155,87 +155,87 @@ Function Gui_RefreshWindow()
                 End If
                 
                 ; --------------------------------------
-                ; Met la fenêtre cliquée au premier plan
+                ; Bring the clicked window to the front
                 ; --------------------------------------
                 
-                If Not ClickedWindow\Modal Then ; Ne change la profondeur que pour les non modales
+                If Not ClickedWindow\Modal Then ; Only change depth for non-modal windows
                     Local OldDepth = ClickedWindow\Depth
                     
                     For widget.GuiWidget = Each GuiWidget
                         If widget\Depth > OldDepth And widget\Modal = False Then
-                            widget\Depth = widget\Depth - 1 ; Décale les autres sauf modales
+                            widget\Depth = widget\Depth - 1 ; Shift others except modal windows
                         End If
                     Next
                     
                     ClickedWindow\Depth = Gui_Widget_HighestDepth - 1
                     
-                    If HasModal Then ClickedWindow\Depth = ModalWindow\Depth - 1 	; Sous la modale
+                    If HasModal Then ClickedWindow\Depth = ModalWindow\Depth - 1 	; Below the modal
                     
-                    UpdateChildrenDepth(ClickedWindow)                  			; Met à jour la profondeur des enfants
+                    UpdateChildrenDepth(ClickedWindow)                  			; Update children depth
                 End If
                 
             Else
                 
-                ; ------------------------------------------------------------
-                ; Réinitialise la current window si clic hors de toute fenêtre
-                ; ------------------------------------------------------------
+                ; -------------------------------------------------------
+                ; Reset the current window if click is outside any window
+                ; -------------------------------------------------------
                 Gui_CurrentSelectedWindow = Null
                 
             End If
         Else
             
-            ; -------------------------
-            ; Aucun clic valide détecté
-            ; -------------------------
+            ; -----------------------
+            ; No valid click detected
+            ; -----------------------
             Gui_CurrentSelectedWindow = Null 
             
         End If
         
     EndIf
     
-    ; ----------------------------------------------
-    ; Étape 3 : Permet le déplacement même si modale
-    ; ----------------------------------------------
+    ; ------------------------------------
+    ; Step 3: Allow dragging even if modal
+    ; ------------------------------------
     If Gui_CurrentDraggedWindow <> Null Then 
         
         If Gui_MousePressLeft Then
             
-            Gui_CurrentDraggedWindow\Px = Gui_MouseX - Gui_CurrentDraggedWindow\DragOffsetX ; Met à jour la position X
-            Gui_CurrentDraggedWindow\Py = Gui_MouseY - Gui_CurrentDraggedWindow\DragOffsetY ; Met à jour la position Y
+            Gui_CurrentDraggedWindow\Px = Gui_MouseX - Gui_CurrentDraggedWindow\DragOffsetX ; Update X position
+            Gui_CurrentDraggedWindow\Py = Gui_MouseY - Gui_CurrentDraggedWindow\DragOffsetY ; Update Y position
             
         Else
             
-            ; --------------------------------
-            ; Arrête le déplacement si relâché
-            ; --------------------------------
+            ; -------------------------
+            ; Stop dragging if released
+            ; -------------------------
             Gui_CurrentDraggedWindow = Null   
             
         End If
         
     End If
     
-    ; ----------------------------------------------------
-    ; Étape 4 : Permet le redimensionnement même si modale
-    ; ----------------------------------------------------
-    If Gui_CurrentSizedWindow <> Null  Then 
+    ; ------------------------------------
+    ; Step 4: Allow resizing even if modal
+    ; ------------------------------------
+    If Gui_CurrentSizedWindow <> Null Then 
         
-        If Gui_MousePressLeft And Gui_CurrentSizedWindow\Sizable = True Then ; Ajout de la condition Sizable    											
+        If Gui_MousePressLeft And Gui_CurrentSizedWindow\Sizable = True Then ; Added Sizable condition    								
             
             absX# = GetAbsoluteX(Gui_CurrentSizedWindow)
             absY# = GetAbsoluteY(Gui_CurrentSizedWindow)
             
-            newW# = Gui_MouseX% - absX + Gui_CurrentSizedWindow\SizeOffsetX#   									; Calcule la nouvelle largeur
-            newH# = Gui_MouseY% - absY + Gui_CurrentSizedWindow\SizeOffsetY#  									; Calcule la nouvelle hauteur
+            newW# = Gui_MouseX% - absX + Gui_CurrentSizedWindow\SizeOffsetX#   									; Calculate new width
+            newH# = Gui_MouseY% - absY + Gui_CurrentSizedWindow\SizeOffsetY#  									; Calculate new height
             
-            If newW < Gui_CurrentSizedWindow\MinSx# Then newW = Gui_CurrentSizedWindow\MinSx#           		; Limite minimale de largeur
-            If newH < Gui_CurrentSizedWindow\MinSy# Then newH = Gui_CurrentSizedWindow\MinSy#             		; Limite minimale de hauteur
+            If newW < Gui_CurrentSizedWindow\MinSx# Then newW = Gui_CurrentSizedWindow\MinSx#           		; Minimum width limit
+            If newH < Gui_CurrentSizedWindow\MinSy# Then newH = Gui_CurrentSizedWindow\MinSy#             		; Minimum height limit
             
-            Gui_CurrentSizedWindow\Sx = newW                													; Applique la nouvelle largeur
-            Gui_CurrentSizedWindow\Sy = newH                													; Applique la nouvelle hauteur
+            Gui_CurrentSizedWindow\Sx = newW                													; Apply new width
+            Gui_CurrentSizedWindow\Sy = newH                													; Apply new height
             
-            ; -------------------------------------------------------
-            ; Repositionne le bouton "X" dans le coin supérieur droit
-            ; -------------------------------------------------------
+            ; -------------------------------------------------
+            ; Reposition the "X" button in the top-right corner
+            ; -------------------------------------------------
             For i = 0 To Gui_CurrentSizedWindow\ChildCount - 1
                 If Gui_CurrentSizedWindow\Children[i] <> Null And Gui_CurrentSizedWindow\Children[i]\Label = "X" Then
                     Gui_CurrentSizedWindow\Children[i]\Px = newW - 20
@@ -244,9 +244,9 @@ Function Gui_RefreshWindow()
             
         Else
             
-            ; --------------------------------------
-            ; Arrête le redimensionnement si relâché
-            ; --------------------------------------
+            ; -------------------------
+            ; Stop resizing if released
+            ; -------------------------
             Gui_CurrentSizedWindow = Null   
             
         End If
@@ -255,32 +255,29 @@ Function Gui_RefreshWindow()
     
 End Function
 
-; ------------------------------------
+; ------------------------------
 ; Function to redraw the Windows
-; ------------------------------------
-; ------------------------------------
-; Function to redraw the Windows
-; ------------------------------------
+; ------------------------------
 Function Gui_RedrawWindow(Widget.GuiWidget)
-    absX# = GetAbsoluteX(Widget)    ; Position X absolue
-    absY# = GetAbsoluteY(Widget)    ; Position Y absolue
-	
-    ; Gris pour le corps
+    absX# = GetAbsoluteX(Widget)    ; Absolute X position
+    absY# = GetAbsoluteY(Widget)    ; Absolute Y position
+    
+    ; Gray for the body
     Gui_Rect(absX, absY, Widget\Sx, Widget\Sy, 1, 100, 100, 100, 0)
-	
-    ; Couleur de la barre de titre : deux états seulement
+    
+    ; Title bar color: two states only
     If Widget\Depth = Gui_Widget_HighestDepth - 1 Then
-        ; Rouge si sélectionnée (au premier plan)
+        ; Red if selected (in the foreground)
         Gui_Rect(absX, absY, Widget\Sx, 20, 1, 150, 50, 50, 0)
     Else
-        ; Gris foncé si non sélectionnée (en arrière-plan)
+        ; Dark gray if not selected (in the background)
         Gui_Rect(absX, absY, Widget\Sx, 20, 1, 50, 50, 50, 0)
     End If
     
-    ; Blanc pour le texte
+    ; White for the text
     Gui_Text(absX + 5, absY + 2, Widget\Label, 255, 255, 255, 1)
     
-    ; Gris clair pour le gadget de redimensionnement (affiché seulement si Sizable)
+    ; Light gray for the resize gadget (displayed only if Sizable)
     If Widget\Sizable Then
         Gui_Rect(absX + Widget\Sx - Gui_WindowSizeIcon, absY + Widget\Sy - Gui_WindowSizeIcon, Gui_WindowSizeIcon, Gui_WindowSizeIcon, 1, 100, 160, 100, 0)
     End If
