@@ -15,6 +15,7 @@ Type GuiWidget
 	Field SizeOffsetY#
 
 	Field Modal						; For windows
+	Field Sizable					; For Windows
 	
     Field Active            		; Active state (not used yet)
 	
